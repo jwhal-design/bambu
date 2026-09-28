@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tinkercad to Bambu Studio: Station Tutorial</title>
+<style>
+  :root {
+    --ink: #1C2632;
+    --muted: #4A5868;
+    --paper: #FFFFFF;
+    --grid: #DCE6EF;
+    --pla: #1F6FB2;
+    --pla-soft: #E4EFF8;
+    --birch: #EADBC0;
+    --kerf: #5A3B22;
+    --green: #2F7D4F;
+    --head: "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --body: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 19px; }
+  body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--body); line-height: 1.5; }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1, h2, h3 { font-family: var(--head); font-weight: 700; line-height: 1.1; margin: 0; }
+  h1 { font-size: 2.5rem; }
+  .intro { margin: 0.6rem 0 1.4rem; color: var(--muted); max-width: 38rem; }
+
+  .tabs { display: flex; gap: 0; border: 2px solid var(--ink); margin-bottom: 1.4rem; }
+  .tabs button {
+    flex: 1; font-family: var(--head); font-size: 1.05rem; font-weight: 700; padding: 0.6rem;
+    background: var(--paper); color: var(--ink); border: 0; border-right: 2px solid var(--ink); cursor: pointer;
+  }
+  .tabs button:last-child { border-right: 0; }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  button:focus-visible { outline: 3px solid var(--pla); outline-offset: 2px; }
+
+  .panel[hidden] { display: none; }
+
+  /* Progress: a print bed filling layer by layer */
+  .bed { display: flex; gap: 4px; margin-bottom: 1rem; }
+  .bed span { flex: 1; height: 10px; background: var(--grid); }
+  .bed span.done { background: var(--pla); }
+
+  .step {
+    border: 2px solid var(--ink); padding: 1.3rem 1.3rem 1.1rem; min-height: 19rem;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 22px 22px; background-color: var(--paper);
+  }
+  .step .n { font-family: var(--head); font-size: 1rem; color: var(--muted); }
+  .step h2 { font-size: 2rem; margin: 0.2rem 0 0.8rem; }
+  .step p, .step li { max-width: 36rem; }
+  .step ol, .step ul { padding-left: 1.3rem; }
+  .step li { margin-bottom: 0.35rem; }
+  .ui { font-family: var(--head); font-weight: 700; background: var(--paper); border: 1.5px solid var(--ink); padding: 0 0.3rem; white-space: nowrap; }
+  .tip { background: var(--pla-soft); border-left: 5px solid var(--pla); padding: 0.55rem 0.8rem; margin-top: 0.9rem; }
+  .stop { background: #F7EFE3; border-left: 5px solid var(--kerf); padding: 0.55rem 0.8rem; margin-top: 0.9rem; }
+
+  .nav { display: flex; justify-content: space-between; margin-top: 1rem; gap: 1rem; }
+  .nav button {
+    font-family: var(--head); font-weight: 700; font-size: 1.15rem; padding: 0.7rem 1.4rem;
+    border: 2px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; min-width: 8rem;
+  }
+  .nav button.primary { background: var(--pla); border-color: var(--pla); color: #fff; }
+  .nav button:disabled { opacity: 0.35; cursor: default; }
+  .hint { font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+
+  .list section { break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.5rem; border-bottom: 1px solid #c9d3dc; }
+  th { font-family: var(--head); border-bottom: 2px solid var(--ink); }
+
+  .printonly { display: none; }
+
+  @media print {
+    html { font-size: 13pt; }
+    @page { size: letter; margin: 0.55in; }
+    .tabs, .nav, .hint, .bed { display: none !important; }
+    .panel[hidden] { display: block !important; }
+    .screenonly { display: none !important; }
+    .printonly { display: block; }
+    .step { min-height: 0; margin-bottom: 0.9rem; break-inside: avoid; background-image: none; padding: 0.8rem 1rem; }
+    .step h2 { font-size: 1.45rem; }
+    .panel + .panel { break-before: page; }
+    .tip, .stop { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .bed span { transition: background-color 0.25s; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tinkercad to Bambu Studio</h1>
+  <p class="intro">Station tutorial. Take your Tinkercad design and turn it into a real print on one of the Bambu printers. About 10 minutes if nothing goes wrong, which is a bold assumption.</p>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-print" aria-selected="true" aria-controls="panel-print">Print my design</button>
+    <button role="tab" id="tab-fix" aria-selected="false" aria-controls="panel-fix">Something went wrong</button>
+    <button role="tab" id="tab-setup" aria-selected="false" aria-controls="panel-setup">Station setup</button>
+  </div>
+
+  <div class="panel" id="panel-print" role="tabpanel" aria-labelledby="tab-print">
+    <div class="bed" id="bed" aria-hidden="true"></div>
+    <div id="steps" aria-live="polite"></div>
+    <div class="nav screenonly">
+      <button id="prev">Back</button>
+      <button id="next" class="primary">Next step</button>
+    </div>
+    <p class="hint screenonly">Arrow keys also move between steps.</p>
+  </div>
+
+  <div class="panel" id="panel-fix" role="tabpanel" aria-labelledby="tab-fix" hidden>
+    <h2 class="printonly" style="margin-bottom:0.6rem">Something went wrong</h2>
+    <table>
+      <thead><tr><th>What you see</th><th>What to do</th></tr></thead>
+      <tbody>
+        <tr><td>Your printer isn't in the list when you press Print</td><td>This laptop must be logged in to the Bambu account that owns the printers, on the same network. Get the facilitator. Backup plan: export the sliced file to the printer's SD card or USB and walk it over.</td></tr>
+        <tr><td>Red warning that the model is outside the plate</td><td>Use <span class="ui">Arrange</span>, or scale the model down. Your design must fit the 60 x 60 x 25 mm challenge box anyway.</td></tr>
+        <tr><td>Estimate is over 30 minutes</td><td>Scale down 10 to 20 percent, or lower the height. Height costs the most time.</td></tr>
+        <tr><td>The preview shows supports you didn't ask for</td><td>Turn supports off, then rotate so the largest flat face sits on the plate. If it still won't print without supports, redesign the overhang.</td></tr>
+        <tr><td>First layer isn't sticking or looks like spaghetti</td><td>Stop the print from the printer screen. Tell the facilitator. The plate may need cleaning. Your print isn't doomed; it's data.</td></tr>
+        <tr><td>Parts floating in the air in the preview</td><td>In Tinkercad, pieces weren't touching the workplane or each other. Group them, drop them to the workplane, and export again.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="panel-setup" role="tabpanel" aria-labelledby="tab-setup" hidden>
+    <h2 class="printonly" style="margin-bottom:0.6rem">Station setup (facilitator)</h2>
+    <table>
+      <thead><tr><th>Check</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Bambu Studio installed on a Windows or Mac laptop</td><td>It's a desktop app. It will not run on Chromebooks. Ask district IT early.</td></tr>
+        <tr><td>Region set correctly on first launch, and logged in</td><td>An account from one region can't log in with another region selected.</td></tr>
+        <tr><td>Bambu Network plug-in installed</td><td>Required to log in and to send prints over the network.</td></tr>
+        <tr><td>Every printer model in the room added as a preset, 0.4 mm nozzle unless you changed it</td><td>Participants pick the preset that matches the printer they send to. A mismatched preset can make a print fail or worse.</td></tr>
+        <tr><td>All printers bound to the logged-in account and on the same network as the station</td><td>That's the only way they appear in the send list.</td></tr>
+        <tr><td>Label each printer with its model and name as it appears in Bambu Studio</td><td>"Which one is Printer 2?" is the most-asked question at a slicing station.</td></tr>
+        <tr><td>Same filament preset as what's loaded (usually generic or Bambu PLA)</td><td>Wrong filament preset means wrong temperatures.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:1rem">Classroom note: with students, the pattern that scales is students design and export, the teacher slices. It keeps one person responsible for presets and gives you a natural checkpoint to ask "why this size?"</p>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  { t: "Export from Tinkercad",
+    h: `<p>Open your design in Tinkercad in this laptop's browser.</p>
+        <ol><li>Select everything and <span class="ui">Group</span> it if it's more than one piece.</li>
+        <li>Click <span class="ui">Export</span> (top right).</li>
+        <li>Under 3D printing, choose <span class="ui">.STL</span>. It lands in Downloads.</li></ol>
+        <div class="tip">Designing for the Glowforge instead? Export <span class="ui">.SVG</span> and take it to the laser station. You're at the wrong table.</div>` },
+  { t: "Open it in Bambu Studio",
+    h: `<ol><li>Click <span class="ui">New Project</span> if a project isn't already open.</li>
+        <li>Drag your .STL file from Downloads onto the plate. Or use the add icon on the top toolbar, or <span class="ui">File &gt; Import</span>.</li></ol>
+        <p>Your design appears on the build plate. Drag to rotate the view and scroll to zoom.</p>` },
+  { t: "Match the printer",
+    h: `<p>On the left, check three dropdowns against the label on the printer you're sending to:</p>
+        <ul><li><b>Printer:</b> the model, with 0.4 mm nozzle.</li>
+        <li><b>Plate type:</b> whatever is installed on that printer.</li>
+        <li><b>Filament:</b> the PLA that's loaded.</li></ul>
+        <div class="stop">Wrong printer preset is the one mistake that can hurt a machine. If you're not sure, ask before moving on.</div>` },
+  { t: "Lay it flat",
+    h: `<ol><li>Select your model.</li>
+        <li>Use <span class="ui">Lay on face</span> and click the largest flat side, so it sits flat on the plate.</li>
+        <li>Click <span class="ui">Arrange</span> to center it.</li></ol>
+        <p>Big flat face down means it sticks better, prints faster, and needs no supports.</p>` },
+  { t: "Leave the settings alone",
+    h: `<p>For today, use the defaults:</p>
+        <ul><li>Layer height about 0.20 mm (the standard preset).</li>
+        <li>Supports off. The challenge rules out designs that need them.</li>
+        <li>Default infill (around 15 percent) is plenty.</li></ul>
+        <p>There are hundreds of settings in here. You need zero of them to make a working object. Restraint is a skill.</p>` },
+  { t: "Slice and check the time",
+    h: `<ol><li>Click <span class="ui">Slice plate</span> (top right).</li>
+        <li>Read the estimated print time.</li></ol>
+        <p><b>Over 30 minutes?</b> Go back, select the model, and scale it down, or lower its height. Then slice again.</p>
+        <p>Scroll through the layer preview on the right side. If anything looks like it's hanging in the air, see "Something went wrong."</p>` },
+  { t: "Send it",
+    h: `<ol><li>Click <span class="ui">Print plate</span>.</li>
+        <li>Pick your printer from the dropdown. Check the name matches the label on the machine.</li>
+        <li>Leave bed leveling on. Turn timelapse off.</li>
+        <li>Click <span class="ui">Send</span>.</li></ol>` },
+  { t: "Watch the first layer",
+    h: `<p>Walk to your printer and watch the first two or three minutes. A good first layer is flat and smooth with no gaps.</p>
+        <p>Write your printer name and start time on your Fix-It handout. Then go back to your table. Staring won't make it faster. People have tried.</p>
+        <div class="tip">When it's done, let the plate cool, then flex the plate to pop the print off. Don't pry with anything metal.</div>` }
+];
+
+const stepsEl = document.getElementById('steps');
+const bed = document.getElementById('bed');
+const prev = document.getElementById('prev');
+const next = document.getElementById('next');
+let i = 0;
+
+STEPS.forEach(() => bed.appendChild(document.createElement('span')));
+// Print version: all steps rendered once, hidden on screen
+const printList = document.createElement('div');
+printList.className = 'printonly list';
+printList.innerHTML = STEPS.map((s, k) =>
+  `<section class="step"><div class="n">Step ${k + 1} of ${STEPS.length}</div><h2>${s.t}</h2>${s.h}</section>`).join('');
+document.getElementById('panel-print').appendChild(printList);
+
+function render() {
+  const s = STEPS[i];
+  stepsEl.innerHTML = `<section class="step screenonly"><div class="n">Step ${i + 1} of ${STEPS.length}</div><h2>${s.t}</h2>${s.h}</section>`;
+  [...bed.children].forEach((el, k) => el.classList.toggle('done', k <= i));
+  prev.disabled = i === 0;
+  next.textContent = i === STEPS.length - 1 ? 'Start over' : 'Next step';
+}
+prev.onclick = () => { if (i > 0) { i--; render(); } };
+next.onclick = () => { i = i === STEPS.length - 1 ? 0 : i + 1; render(); };
+document.addEventListener('keydown', e => {
+  if (document.getElementById('panel-print').hidden) return;
+  if (e.key === 'ArrowRight') next.click();
+  if (e.key === 'ArrowLeft' && i > 0) prev.click();
+});
+
+const tabs = [...document.querySelectorAll('[role=tab]')];
+tabs.forEach(tab => tab.onclick = () => {
+  tabs.forEach(t => {
+    const on = t === tab;
+    t.setAttribute('aria-selected', on);
+    document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+  });
+});
+render();
+</script>
+</body>
+</html>
